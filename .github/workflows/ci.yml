@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Export web
+        env:
+          EXPO_PUBLIC_APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          EXPO_PUBLIC_APPWRITE_PROJECT_ID: ci-placeholder
+          EXPO_PUBLIC_IOS_BUNDLE_ID: com.dzikle.universalstarter
+          EXPO_PUBLIC_ANDROID_PACKAGE: com.dzikle.universalstarter
+        run: npm run build:web

@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Universal App Starter",
+    "slug": "universal-app-starter",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "universalstarter",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.dzikle.universalstarter",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.dzikle.universalstarter",
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
