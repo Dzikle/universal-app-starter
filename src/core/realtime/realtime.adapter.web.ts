@@ -1,17 +1,22 @@
 import { getWebAppwrite } from '@/core/appwrite/services.web';
 
 import { toAppwriteChannel } from './channel';
-import type { RealtimeAdapter, RealtimeEvent } from './types';
+import type { RealtimeAdapter } from './types';
 
 const realtime = () => getWebAppwrite().realtime;
 
 export const realtimeAdapter: RealtimeAdapter = {
-  async subscribe(channel, callback) {
+  async subscribe<T>(channel, callback) {
     const channels = (Array.isArray(channel) ? channel : [channel]).map(
       toAppwriteChannel,
     );
-    const subscription = await realtime().subscribe(channels, (response) => {
-      callback(response as RealtimeEvent);
+    const subscription = await realtime().subscribe<T>(channels, (response) => {
+      callback({
+        events: response.events,
+        channels: response.channels,
+        timestamp: response.timestamp,
+        payload: response.payload,
+      });
     });
 
     return async () => {

@@ -10,7 +10,7 @@ export type RealtimeChannel =
 export type RealtimeEvent<T = unknown> = {
   events: string[];
   channels: string[];
-  timestamp: string;
+  timestamp: string | number;
   payload: T;
 };
 

@@ -60,6 +60,10 @@ import { functionAdapter } from '@/core/functions/functions.adapter';
 
 For example, a product repository may create its own `tripRepository` or `propertyRepository` that uses `dataAdapter`, while domain code depends only on that repository.
 
+### Native compatibility note
+
+The pinned React Native Appwrite SDK currently exposes Realtime through `Client.subscribe()` rather than the newer Web `Realtime` service, and native file uploads use a `{ uri, name, type, size }` object. Those differences are contained entirely inside the native adapters so feature code sees one API.
+
 ## Scripts
 
 ```bash

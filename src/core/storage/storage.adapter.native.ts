@@ -1,4 +1,4 @@
-import { ID, InputFile } from 'react-native-appwrite';
+import { ID } from 'react-native-appwrite';
 
 import { getNativeAppwrite } from '@/core/appwrite/services.native';
 
@@ -13,7 +13,12 @@ export const storageAdapter: StorageAdapter = {
       await storage().createFile({
         bucketId: input.bucketId,
         fileId: input.fileId ?? ID.unique(),
-        file: InputFile.fromPath(input.asset.uri, input.asset.name),
+        file: {
+          uri: input.asset.uri,
+          name: input.asset.name,
+          type: input.asset.mimeType,
+          size: input.asset.size,
+        },
         permissions: input.permissions,
       }),
     );

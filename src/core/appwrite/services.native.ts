@@ -5,7 +5,6 @@ import {
   Account,
   Client,
   Functions,
-  Realtime,
   Storage,
   TablesDB,
 } from 'react-native-appwrite';
@@ -18,7 +17,6 @@ type NativeAppwriteServices = {
   account: Account;
   tables: TablesDB;
   storage: Storage;
-  realtime: Realtime;
   functions: Functions;
 };
 
@@ -46,7 +44,6 @@ export function getNativeAppwrite(): NativeAppwriteServices {
       account: new Account(client),
       tables: new TablesDB(client),
       storage: new Storage(client),
-      realtime: new Realtime(client),
       functions: new Functions(client),
     };
   }

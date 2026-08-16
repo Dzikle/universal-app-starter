@@ -1,25 +1,42 @@
 import { getNativeAppwrite } from '@/core/appwrite/services.native';
 
 import { toAppwriteChannel } from './channel';
-import type { RealtimeAdapter, RealtimeEvent } from './types';
+import type { RealtimeAdapter } from './types';
 
-const realtime = () => getNativeAppwrite().realtime;
+type NativeUnsubscribe = () => void;
+const activeSubscriptions = new Set<NativeUnsubscribe>();
 
 export const realtimeAdapter: RealtimeAdapter = {
-  async subscribe(channel, callback) {
+  async subscribe<T>(channel, callback) {
     const channels = (Array.isArray(channel) ? channel : [channel]).map(
       toAppwriteChannel,
     );
-    const subscription = await realtime().subscribe(channels, (response) => {
-      callback(response as RealtimeEvent);
-    });
+
+    const unsubscribe = getNativeAppwrite().client.subscribe<T>(
+      channels,
+      (response) => {
+        callback({
+          events: response.events,
+          channels: response.channels,
+          timestamp: response.timestamp,
+          payload: response.payload,
+        });
+      },
+    );
+
+    activeSubscriptions.add(unsubscribe);
 
     return async () => {
-      await subscription.unsubscribe();
+      if (activeSubscriptions.delete(unsubscribe)) {
+        unsubscribe();
+      }
     };
   },
 
   async disconnect() {
-    await realtime().disconnect();
+    for (const unsubscribe of [...activeSubscriptions]) {
+      unsubscribe();
+    }
+    activeSubscriptions.clear();
   },
 };
