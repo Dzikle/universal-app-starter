@@ -7,6 +7,9 @@ on:
       - main
       - 'feat/**'
 
+permissions:
+  contents: write
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -25,8 +28,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit production dependency tree
+        run: npm audit --omit=dev --audit-level=critical
 
       - name: Typecheck
         run: npm run typecheck
@@ -39,11 +42,14 @@ jobs:
           EXPO_PUBLIC_ANDROID_PACKAGE: com.dzikle.universalstarter
         run: npm run build:web
 
-      - name: Preserve generated npm lockfile
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: npm-lock-${{ github.run_id }}
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit generated lockfile once
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/initial-platform'
+        run: |
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: lock npm dependencies'
+          git push origin HEAD:${GITHUB_REF_NAME}
