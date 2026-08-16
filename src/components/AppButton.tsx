@@ -4,7 +4,7 @@ import { useTheme } from '@/core/theme/ThemeProvider';
 
 type AppButtonProps = {
   label: string;
-  onPress(): void | Promise<void>;
+  onPress(): void | Promise<unknown>;
   disabled?: boolean;
   loading?: boolean;
   variant?: 'primary' | 'secondary' | 'danger';
