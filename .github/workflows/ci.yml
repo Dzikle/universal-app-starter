@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check Expo dependency compatibility
+        run: npx expo install --check
+
+      - name: Audit production dependency tree
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Export web
+        env:
+          EXPO_PUBLIC_APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          EXPO_PUBLIC_APPWRITE_PROJECT_ID: ci-placeholder
+          EXPO_PUBLIC_IOS_BUNDLE_ID: com.dzikle.universalstarter
+          EXPO_PUBLIC_ANDROID_PACKAGE: com.dzikle.universalstarter
+        run: npm run build:web
