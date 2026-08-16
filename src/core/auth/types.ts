@@ -19,6 +19,20 @@ export type CompleteRecoveryInput = {
   password: string;
 };
 
+export type OAuthProviderId =
+  | 'google'
+  | 'apple'
+  | 'github'
+  | 'facebook'
+  | 'microsoft';
+
+export type OAuthUrlInput = {
+  provider: OAuthProviderId;
+  success: string;
+  failure?: string;
+  scopes?: string[];
+};
+
 export interface AuthAdapter {
   getCurrentUser(): Promise<AppUser | null>;
   signIn(input: SignInInput): Promise<AppUser>;
@@ -27,4 +41,6 @@ export interface AuthAdapter {
   updateName(name: string): Promise<AppUser>;
   sendPasswordRecovery(email: string, redirectUrl: string): Promise<void>;
   completePasswordRecovery(input: CompleteRecoveryInput): Promise<void>;
+  createOAuthTokenUrl(input: OAuthUrlInput): string;
+  createTokenSession(input: { userId: string; secret: string }): Promise<AppUser>;
 }

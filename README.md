@@ -6,15 +6,18 @@ The goal is simple: **new products should add domain logic, not rebuild applicat
 
 ## Core stack
 
-- Expo SDK 57
-- Expo Router
+- Expo SDK 57 + Expo Router
 - React Native + React Native Web
 - TypeScript
-- Appwrite Auth through platform adapters
+- Appwrite Auth with email/password, recovery, and optional OAuth providers
 - Appwrite TablesDB through a provider-neutral data port
 - Appwrite Storage through a universal upload/file port
 - Appwrite Realtime through provider-neutral channel subscriptions
 - Appwrite Functions through a generic execution port
+- Native APNs/FCM registration into Appwrite Messaging
+- Secure native/local web persistence boundary
+- Reusable form/validation primitives
+- EAS development, preview, and production build profiles
 - GitHub Actions verification
 
 ## Principles
@@ -33,7 +36,13 @@ cp .env.example .env
 npm run start
 ```
 
-Open Android, iOS, or web from the Expo development server.
+For native capabilities such as remote push notifications and reliable OAuth deep-link redirects, use an Expo development build:
+
+```bash
+npx eas build --profile development --platform android
+# or
+npx eas build --profile development --platform ios
+```
 
 ## Appwrite setup
 
@@ -46,6 +55,18 @@ Set the values from `.env.example`, then add three platforms in the Appwrite Con
 The client contains no server API keys. Never place Appwrite server keys or other secrets in an `EXPO_PUBLIC_*` variable.
 
 Tables, buckets, permissions, and function IDs are intentionally **not** hard-coded in the starter. A product supplies those identifiers from its own feature/config layer.
+
+### Authentication
+
+Email/password works through the auth adapter. Password recovery is enabled when `EXPO_PUBLIC_PASSWORD_RECOVERY_URL` is set and allowed by Appwrite.
+
+Optional social buttons are controlled by the `EXPO_PUBLIC_AUTH_*_ENABLED` flags. Before enabling one, configure that OAuth provider in Appwrite and allow the generated `/oauth/callback` redirect URL. Native OAuth should be tested in a development or production build rather than relying on Expo Go.
+
+### Push notifications
+
+The starter requests a native APNs/FCM device token and registers it as an Appwrite push target. Configure APNs/FCM credentials and an Appwrite Messaging push provider first. `EXPO_PUBLIC_APPWRITE_PUSH_PROVIDER_ID` is optional; when omitted Appwrite can use the first configured push provider.
+
+Remote push registration is intentionally a user-triggered action in Settings rather than an automatic permission prompt at startup.
 
 ## Core ports
 
@@ -81,11 +102,15 @@ npm run typecheck
 app/                    Expo Router routes
 src/components/         Generic reusable UI primitives
 src/core/appwrite/      Shared platform-specific Appwrite clients/services
-src/core/auth/          Authentication port + adapter
+src/core/auth/          Authentication + OAuth port/adapters
 src/core/data/          Generic TablesDB row/query port + adapter
 src/core/storage/       Universal file/storage port + adapter
 src/core/realtime/      Generic realtime channels + adapter
 src/core/functions/     Generic function execution port + adapter
+src/core/notifications/ Push registration abstraction
+src/core/persistence/   Secure native / local web key-value storage
+src/core/forms/         Small reusable form-state hook
+src/core/validation/    Common validation rules
 src/core/config/        Environment/configuration
 src/core/errors/        Application error boundary types
 src/core/logging/       Logging boundary

@@ -1,5 +1,4 @@
 import { Link } from 'expo-router';
-import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
@@ -8,14 +7,31 @@ import { AppScreen } from '@/components/AppScreen';
 import { AppTextField } from '@/components/AppTextField';
 import { SetupBanner } from '@/components/SetupBanner';
 import { useAuth } from '@/core/auth/AuthProvider';
+import { useForm } from '@/core/forms/useForm';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { email, password, required } from '@/core/validation/common';
 
 export default function SignUpScreen() {
   const { colors, spacing } = useTheme();
   const { signUp, isBusy, errorMessage, clearError } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const form = useForm({
+    initialValues: { name: '', email: '', password: '' },
+    validate(values) {
+      return {
+        name: required(values.name, 'Name'),
+        email: email(values.email),
+        password: password(values.password),
+      };
+    },
+    onSubmit(values) {
+      clearError();
+      return signUp({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        password: values.password,
+      });
+    },
+  });
 
   return (
     <AppScreen contentContainerStyle={{ justifyContent: 'center' }}>
@@ -23,17 +39,11 @@ export default function SignUpScreen() {
         <Text style={{ color: colors.text, fontSize: 34, fontWeight: '800' }}>Create account</Text>
         <SetupBanner />
         <AppCard>
-          <AppTextField label="Name" value={name} onChangeText={(value) => { clearError(); setName(value); }} autoComplete="name" />
-          <AppTextField label="Email" value={email} onChangeText={(value) => { clearError(); setEmail(value); }} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
-          <AppTextField label="Password" value={password} onChangeText={(value) => { clearError(); setPassword(value); }} secureTextEntry autoComplete="new-password" />
-          <Text style={{ color: colors.textMuted, fontSize: 13 }}>Use at least 8 characters.</Text>
+          <AppTextField label="Name" value={form.values.name} error={form.errors.name} onChangeText={(value) => { clearError(); form.setValue('name', value); }} autoComplete="name" />
+          <AppTextField label="Email" value={form.values.email} error={form.errors.email} onChangeText={(value) => { clearError(); form.setValue('email', value); }} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
+          <AppTextField label="Password" value={form.values.password} error={form.errors.password} onChangeText={(value) => { clearError(); form.setValue('password', value); }} secureTextEntry autoComplete="new-password" />
           {errorMessage ? <Text style={{ color: colors.danger }}>{errorMessage}</Text> : null}
-          <AppButton
-            label="Create account"
-            loading={isBusy}
-            disabled={!name.trim() || !email.trim() || password.length < 8}
-            onPress={() => signUp({ name: name.trim(), email: email.trim(), password })}
-          />
+          <AppButton label="Create account" loading={isBusy || form.isSubmitting} onPress={form.submit} />
         </AppCard>
         <Link href="/sign-in" style={{ color: colors.primary, textAlign: 'center', fontWeight: '700' }}>
           Back to sign in

@@ -12,7 +12,14 @@ import { toAppError } from '@/core/errors/AppError';
 import { logger } from '@/core/logging/logger';
 
 import { authAdapter } from './auth.adapter';
-import type { AppUser, CompleteRecoveryInput, SignInInput, SignUpInput } from './types';
+import { signInWithOAuth as runOAuthSignIn } from './oauth';
+import type {
+  AppUser,
+  CompleteRecoveryInput,
+  OAuthProviderId,
+  SignInInput,
+  SignUpInput,
+} from './types';
 
 type AuthContextValue = {
   user: AppUser | null;
@@ -23,6 +30,7 @@ type AuthContextValue = {
   refresh(): Promise<void>;
   signIn(input: SignInInput): Promise<boolean>;
   signUp(input: SignUpInput): Promise<boolean>;
+  signInWithOAuth(provider: OAuthProviderId, scopes?: string[]): Promise<boolean>;
   signOut(): Promise<void>;
   updateName(name: string): Promise<boolean>;
   sendPasswordRecovery(email: string, redirectUrl: string): Promise<boolean>;
@@ -82,6 +90,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       async signUp(input) {
         const result = await run(() => authAdapter.signUp(input));
         if (!result.ok) return false;
+        setUser(result.value);
+        return true;
+      },
+      async signInWithOAuth(provider, scopes) {
+        const result = await run(() => runOAuthSignIn(provider, scopes));
+        if (!result.ok || !result.value) return false;
         setUser(result.value);
         return true;
       },

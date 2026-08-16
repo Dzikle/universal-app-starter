@@ -1,5 +1,4 @@
 import { Link } from 'expo-router';
-import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
@@ -8,13 +7,36 @@ import { AppScreen } from '@/components/AppScreen';
 import { AppTextField } from '@/components/AppTextField';
 import { SetupBanner } from '@/components/SetupBanner';
 import { useAuth } from '@/core/auth/AuthProvider';
+import type { OAuthProviderId } from '@/core/auth/types';
+import { env } from '@/core/config/env';
+import { useForm } from '@/core/forms/useForm';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { email, password } from '@/core/validation/common';
+
+const socialProviders: Array<{ provider: OAuthProviderId; label: string; enabled: boolean }> = [
+  { provider: 'google', label: 'Continue with Google', enabled: env.oauth.google },
+  { provider: 'apple', label: 'Continue with Apple', enabled: env.oauth.apple },
+  { provider: 'github', label: 'Continue with GitHub', enabled: env.oauth.github },
+  { provider: 'facebook', label: 'Continue with Facebook', enabled: env.oauth.facebook },
+];
 
 export default function SignInScreen() {
   const { colors, spacing } = useTheme();
-  const { signIn, isBusy, errorMessage, clearError } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { signIn, signInWithOAuth, isBusy, errorMessage, clearError } = useAuth();
+  const form = useForm({
+    initialValues: { email: '', password: '' },
+    validate(values) {
+      return {
+        email: email(values.email),
+        password: password(values.password),
+      };
+    },
+    onSubmit(values) {
+      clearError();
+      return signIn({ email: values.email.trim(), password: values.password });
+    },
+  });
+  const enabledSocial = socialProviders.filter((provider) => provider.enabled);
 
   return (
     <AppScreen contentContainerStyle={{ justifyContent: 'center' }}>
@@ -31,30 +53,45 @@ export default function SignInScreen() {
         <AppCard>
           <AppTextField
             label="Email"
-            value={email}
-            onChangeText={(value) => { clearError(); setEmail(value); }}
+            value={form.values.email}
+            error={form.errors.email}
+            onChangeText={(value) => { clearError(); form.setValue('email', value); }}
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
           />
           <AppTextField
             label="Password"
-            value={password}
-            onChangeText={(value) => { clearError(); setPassword(value); }}
+            value={form.values.password}
+            error={form.errors.password}
+            onChangeText={(value) => { clearError(); form.setValue('password', value); }}
             secureTextEntry
             autoComplete="current-password"
           />
           {errorMessage ? <Text style={{ color: colors.danger }}>{errorMessage}</Text> : null}
           <AppButton
             label="Sign in"
-            loading={isBusy}
-            disabled={!email || password.length < 8}
-            onPress={() => signIn({ email: email.trim(), password })}
+            loading={isBusy || form.isSubmitting}
+            onPress={form.submit}
           />
           <Link href="/forgot-password" style={{ color: colors.primary, textAlign: 'center' }}>
             Forgot password?
           </Link>
         </AppCard>
+
+        {enabledSocial.length ? (
+          <View style={{ gap: spacing.sm }}>
+            {enabledSocial.map(({ provider, label }) => (
+              <AppButton
+                key={provider}
+                label={label}
+                variant="secondary"
+                loading={isBusy}
+                onPress={() => signInWithOAuth(provider)}
+              />
+            ))}
+          </View>
+        ) : null}
 
         <Text style={{ color: colors.textMuted, textAlign: 'center' }}>
           New here?{' '}

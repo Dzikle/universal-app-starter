@@ -1,12 +1,14 @@
-import { ID } from 'react-native-appwrite';
+import { ID, OAuthProvider } from 'react-native-appwrite';
 
 import { getNativeAppwrite } from '@/core/appwrite/services.native';
 import { isAppwriteConfigured } from '@/core/config/env';
+import { AppError } from '@/core/errors/AppError';
 
 import type {
   AppUser,
   AuthAdapter,
   CompleteRecoveryInput,
+  OAuthUrlInput,
   SignInInput,
   SignUpInput,
 } from './types';
@@ -68,5 +70,21 @@ export const authAdapter: AuthAdapter = {
       secret: input.secret,
       password: input.password,
     });
+  },
+
+  createOAuthTokenUrl(input: OAuthUrlInput) {
+    const url = account().createOAuth2Token({
+      provider: input.provider as OAuthProvider,
+      success: input.success,
+      failure: input.failure,
+      scopes: input.scopes,
+    });
+    if (!url) throw new AppError('authentication', 'Unable to start social sign-in.');
+    return url.toString();
+  },
+
+  async createTokenSession(input) {
+    await account().createSession(input);
+    return toUser(await account().get());
   },
 };
