@@ -11,7 +11,10 @@ The goal is simple: **new products should add domain logic, not rebuild applicat
 - React Native + React Native Web
 - TypeScript
 - Appwrite Auth through platform adapters
-- Appwrite-ready database/storage/realtime boundary
+- Appwrite TablesDB through a provider-neutral data port
+- Appwrite Storage through a universal upload/file port
+- Appwrite Realtime through provider-neutral channel subscriptions
+- Appwrite Functions through a generic execution port
 - GitHub Actions verification
 
 ## Principles
@@ -42,6 +45,21 @@ Set the values from `.env.example`, then add three platforms in the Appwrite Con
 
 The client contains no server API keys. Never place Appwrite server keys or other secrets in an `EXPO_PUBLIC_*` variable.
 
+Tables, buckets, permissions, and function IDs are intentionally **not** hard-coded in the starter. A product supplies those identifiers from its own feature/config layer.
+
+## Core ports
+
+Feature code should import the generic adapter, not an Appwrite SDK:
+
+```ts
+import { dataAdapter } from '@/core/data/data.adapter';
+import { storageAdapter } from '@/core/storage/storage.adapter';
+import { realtimeAdapter } from '@/core/realtime/realtime.adapter';
+import { functionAdapter } from '@/core/functions/functions.adapter';
+```
+
+For example, a product repository may create its own `tripRepository` or `propertyRepository` that uses `dataAdapter`, while domain code depends only on that repository.
+
 ## Scripts
 
 ```bash
@@ -58,7 +76,12 @@ npm run typecheck
 ```text
 app/                    Expo Router routes
 src/components/         Generic reusable UI primitives
-src/core/auth/          Auth port + Appwrite platform adapters
+src/core/appwrite/      Shared platform-specific Appwrite clients/services
+src/core/auth/          Authentication port + adapter
+src/core/data/          Generic TablesDB row/query port + adapter
+src/core/storage/       Universal file/storage port + adapter
+src/core/realtime/      Generic realtime channels + adapter
+src/core/functions/     Generic function execution port + adapter
 src/core/config/        Environment/configuration
 src/core/errors/        Application error boundary types
 src/core/logging/       Logging boundary

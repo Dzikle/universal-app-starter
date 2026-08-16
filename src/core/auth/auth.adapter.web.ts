@@ -1,7 +1,7 @@
-import { Account, Client, ID } from 'appwrite';
+import { ID } from 'appwrite';
 
-import { env, isAppwriteConfigured } from '@/core/config/env';
-import { AppError } from '@/core/errors/AppError';
+import { getWebAppwrite } from '@/core/appwrite/services.web';
+import { isAppwriteConfigured } from '@/core/config/env';
 
 import type {
   AppUser,
@@ -13,24 +13,7 @@ import type {
 
 type RawUser = { $id: string; email: string; name: string };
 
-let account: Account | null = null;
-
-if (isAppwriteConfigured) {
-  const client = new Client()
-    .setEndpoint(env.appwriteEndpoint)
-    .setProject(env.appwriteProjectId);
-  account = new Account(client);
-}
-
-const requireAccount = () => {
-  if (!account) {
-    throw new AppError(
-      'configuration',
-      'Appwrite is not configured. Copy .env.example to .env and set the endpoint and project ID.',
-    );
-  }
-  return account;
-};
+const account = () => getWebAppwrite().account;
 
 const toUser = (user: RawUser): AppUser => ({
   id: user.$id,
@@ -40,49 +23,47 @@ const toUser = (user: RawUser): AppUser => ({
 
 export const authAdapter: AuthAdapter = {
   async getCurrentUser() {
-    if (!account) return null;
+    if (!isAppwriteConfigured) return null;
     try {
-      return toUser(await account.get());
+      return toUser(await account().get());
     } catch {
       return null;
     }
   },
 
   async signIn(input: SignInInput) {
-    const service = requireAccount();
-    await service.createEmailPasswordSession(input);
-    return toUser(await service.get());
+    await account().createEmailPasswordSession(input);
+    return toUser(await account().get());
   },
 
   async signUp(input: SignUpInput) {
-    const service = requireAccount();
-    await service.create({
+    await account().create({
       userId: ID.unique(),
       email: input.email,
       password: input.password,
       name: input.name,
     });
-    await service.createEmailPasswordSession({
+    await account().createEmailPasswordSession({
       email: input.email,
       password: input.password,
     });
-    return toUser(await service.get());
+    return toUser(await account().get());
   },
 
   async signOut() {
-    await requireAccount().deleteSession({ sessionId: 'current' });
+    await account().deleteSession({ sessionId: 'current' });
   },
 
   async updateName(name: string) {
-    return toUser(await requireAccount().updateName({ name }));
+    return toUser(await account().updateName({ name }));
   },
 
   async sendPasswordRecovery(email: string, redirectUrl: string) {
-    await requireAccount().createRecovery({ email, url: redirectUrl });
+    await account().createRecovery({ email, url: redirectUrl });
   },
 
   async completePasswordRecovery(input: CompleteRecoveryInput) {
-    await requireAccount().updateRecovery({
+    await account().updateRecovery({
       userId: input.userId,
       secret: input.secret,
       password: input.password,
