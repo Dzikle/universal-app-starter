@@ -14,15 +14,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.14.0
+          node-version-file: .nvmrc
+          package-manager-cache: false
 
       - name: Install dependencies
         run: npm install
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Typecheck
         run: npm run typecheck
@@ -34,3 +38,12 @@ jobs:
           EXPO_PUBLIC_IOS_BUNDLE_ID: com.dzikle.universalstarter
           EXPO_PUBLIC_ANDROID_PACKAGE: com.dzikle.universalstarter
         run: npm run build:web
+
+      - name: Preserve generated npm lockfile
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: npm-lock-${{ github.run_id }}
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 1
